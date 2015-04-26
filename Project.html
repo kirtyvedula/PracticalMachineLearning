@@ -1,0 +1,54 @@
+<pre><code class="r setting_up">setwd(&quot;/home/kirty/R/Coursera/MachineLearning&quot;)
+</code></pre>
+
+<pre><code class="r calling_libraries">library(caret)
+</code></pre>
+
+<h3>Reading data from the files downloaded</h3>
+
+<pre><code class="r read_files">testBulk &lt;- read.csv(&quot;pml-testing.csv&quot;,na.strings=c(&quot;NA&quot;,&quot;&quot;))
+trainBulk &lt;- read.csv(&quot;pml-training.csv&quot;,na.strings=c(&quot;NA&quot;,&quot;&quot;))
+</code></pre>
+
+<h3>Cleaning up the data</h3>
+
+<pre><code class="r cleaning_data">NAs &lt;- apply(trainBulk,2,function(x) {sum(is.na(x))}) 
+cleanTrain &lt;- trainBulk[,which(NAs == 0)]
+cleanTest &lt;- testBulk[,which(NAs == 0)]
+</code></pre>
+
+<pre><code class="r setting_up_libraries">require(caret)
+set.seed(2103)
+</code></pre>
+
+<pre><code class="r train_test_prepare">trainIndex &lt;- createDataPartition(y = cleanTrain$classe, p=0.7,list=FALSE)
+trainSet &lt;- cleanTrain[trainIndex,]
+crossValidationSet &lt;- cleanTrain[-trainIndex,]
+</code></pre>
+
+<h2>Removing variables that have time, or names in it</h2>
+
+<pre><code class="r train_test_set">removeIndex &lt;- as.integer(c(1,2,3,4,5,6))
+trainSet &lt;- trainSet[,-removeIndex]
+testSet &lt;- cleanTest[,-removeIndex]
+</code></pre>
+
+<h2>Fitting the model with 10-fold cross-validation</h2>
+
+<pre><code class="r model_fit">mytrControl = trainControl(method = &quot;cv&quot;, number = 10)
+modelFit &lt;- train(trainSet$classe ~.,data = trainSet, method=&quot;rf&quot;, trControl = mytrControl)
+modelFit
+</code></pre>
+
+<h2>Running the prediction algorithm on the cross-validation set</h2>
+
+<pre><code class="r sample_error">predicted &lt;- predict(modelFit, crossValidationSet)
+SampleError &lt;- sum(predicted == crossValidationSet$classe)/nrow(crossValidationSet)
+SampleError
+</code></pre>
+
+<h3>Testing using the test set</h3>
+
+<pre><code class="r test_set">answers &lt;- predict(modelFit, testSet)
+</code></pre>
+

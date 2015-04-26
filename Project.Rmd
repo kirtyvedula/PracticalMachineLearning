@@ -1,0 +1,61 @@
+---
+title: "Machine Learning Course Project"
+author: "Kirty Vedula"
+date: "04/25/2015"
+output: html_document
+---
+
+```{r setting_up}
+setwd("/home/kirty/R/Coursera/MachineLearning")
+```
+
+```{r calling_libraries}
+library(caret)
+```
+
+### Reading data from the files downloaded
+``` {r read_files}
+testBulk <- read.csv("pml-testing.csv",na.strings=c("NA",""))
+trainBulk <- read.csv("pml-training.csv",na.strings=c("NA",""))
+```
+
+### Cleaning up the data 
+```{r cleaning_data}
+NAs <- apply(trainBulk,2,function(x) {sum(is.na(x))}) 
+cleanTrain <- trainBulk[,which(NAs == 0)]
+cleanTest <- testBulk[,which(NAs == 0)]
+```
+
+```{r setting_up_libraries}
+require(caret)
+set.seed(2103)
+```
+
+```{r train_test_prepare}
+trainIndex <- createDataPartition(y = cleanTrain$classe, p=0.7,list=FALSE)
+trainSet <- cleanTrain[trainIndex,]
+crossValidationSet <- cleanTrain[-trainIndex,]
+```
+## Removing variables that have time, or names in it
+``` {r train_test_set}
+removeIndex <- as.integer(c(1,2,3,4,5,6))
+trainSet <- trainSet[,-removeIndex]
+testSet <- cleanTest[,-removeIndex]
+```
+
+## Fitting the model with 10-fold cross-validation
+``` {r model_fit}
+mytrControl = trainControl(method = "cv", number = 10)
+modelFit <- train(trainSet$classe ~.,data = trainSet, method="rf", trControl = mytrControl)
+modelFit
+```
+## Running the prediction algorithm on the cross-validation set
+``` {r sample_error}
+predicted <- predict(modelFit, crossValidationSet)
+SampleError <- sum(predicted == crossValidationSet$classe)/nrow(crossValidationSet)
+SampleError
+```
+### Testing using the test set
+``` {r test_set}
+answers <- predict(modelFit, testSet)
+```
